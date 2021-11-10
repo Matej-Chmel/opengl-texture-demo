@@ -1,0 +1,7 @@
+.vs/
+/libs/
+__pycache__/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/

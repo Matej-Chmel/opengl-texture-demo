@@ -1,0 +1,52 @@
+{
+	"archives": [
+		{
+			"copy": [
+				{
+					"from": "Debug/glew32.dll",
+					"fromRoot": true,
+					"to": "Release/"
+				}
+			],
+			"move": [
+				{
+					"from": "bin/Release/Win32/glew32.dll",
+					"to": "Debug/"
+				}
+			],
+			"purge": [
+				"bin",
+				"doc",
+				"lib/Release/x64",
+				"Makefile.txt"
+			],
+			"url": "https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0-win32.zip"
+		},
+		{
+			"ignore": [
+				"lib-vc2019"
+			],
+			"purge": [
+				"docs",
+				"lib-*",
+				"README.md"
+			],
+			"url": "https://github.com/glfw/glfw/releases/download/3.3.4/glfw-3.3.4.bin.WIN32.zip"
+		},
+		{
+			"ignore": [
+				"copying.txt"
+			],
+			"purge": [
+				"*.*",
+				"cmake",
+				"doc",
+				"test",
+				"util"
+			],
+			"url": "https://github.com/g-truc/glm/releases/download/0.9.9.8/glm-0.9.9.8.zip"
+		}
+	],
+	"dest": "libs",
+	"root": "../.."
+}

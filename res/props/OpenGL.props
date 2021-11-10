@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros">
+    <RepoDir>$([System.IO.Path]::GetFullPath("$(SolutionDir)..\"))</RepoDir>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OutDir>$(RepoDir)$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(RepoDir)libs\glew\include;$(RepoDir)libs\glfw\include;$(RepoDir)libs\glm;$(RepoDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <PreprocessorDefinitions>RES=R"?($(RepoDir)res)?";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(RepoDir)libs\glew\lib\Release\Win32;$(RepoDir)libs\glfw\lib-vc2019;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glew32.lib;glfw3.lib;glu32.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <BuildMacro Include="RepoDir">
+      <Value>$(RepoDir)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

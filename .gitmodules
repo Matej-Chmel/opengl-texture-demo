@@ -1,0 +1,4 @@
+[submodule "any-project-setup"]
+	path = any-project-setup
+	url = https://github.com/Matej-Chmel/any-project-setup
+	branch = master

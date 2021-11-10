@@ -1,0 +1,9 @@
+{
+	"purge": [
+		"**/__pycache__",
+		"**/Debug/",
+		"**/Release/",
+		"libs"
+	],
+	"root": "../.."
+}
