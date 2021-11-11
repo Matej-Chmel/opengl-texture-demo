@@ -80,9 +80,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\main.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="..\..\res\shaders\texture.frag" />
     <None Include="..\..\res\shaders\texture.vert" />
   </ItemGroup>
@@ -90,6 +87,9 @@
     <ProjectReference Include="..\SOIL\SOIL.vcxproj">
       <Project>{beb12c33-4978-49d9-ba61-b8504dfe4d58}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
