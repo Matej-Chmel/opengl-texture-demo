@@ -1,156 +1,127 @@
 #include <cstdlib>
-#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <glm/vec3.hpp>
 #include <iostream>
-#include <sstream>
+#include <SOIL/SOIL.h>
+#include <stdexcept>
 #include <streambuf>
 #include <string>
 namespace fs = std::filesystem;
 
-constexpr glm::vec3 BACK_COLOR{.8f, 1.f, .9f};
-constexpr auto TITLE = "Triangle";
-constexpr auto WIDTH = 800;
-constexpr auto HEIGHT = 600;
-
-const GLfloat triangleVertices[]{
-	-.8f, -.5f, 0.f, 0.f, 1.f, 1.f,
-	.8f, -.5f, 0.f, 0.f, .5f, .8f,
-	0.f, .5f, 0.f, 0.f, .3f, .7f
+constexpr GLfloat plain[]{
+	1.f, 0.f, 1.f, 0.f, 1.f, 0.f, 0.f, 0.f,
+	1.f, 0.f, -1.f, 0.f, 1.f, 0.f, 1.f, 0.f,
+	-1.f, 0.f, -1.f, 0.f, 1.f, 0.f, 1.f, 1.f,
+	-1.f, 0.f, 1.f, 0.f, 1.f, 0.f, 0.f, 1.f,
+	1.f, 0.f, 1.f, 0.f, 1.f, 0.f, 0.f, 0.f,
+	-1.f, 0.f, -1.f, 0.f, 1.f, 0.f, 1.f, 1.f
 };
 
-class AppError : public std::exception {
-public:
-	AppError(const char* const msg) : std::exception(msg) {}
-	AppError(const std::string& msg) : AppError(msg.c_str()) {}
-	AppError(const std::stringstream& s) : AppError(s.str()) {}
+constexpr GLfloat triangle[]{
+	-.8f, -.5f, 0.f, 0.f, 1.f, 1.f, .5f, .5f,
+	.8f, -.5f, 0.f, 0.f, .5f, .8f, 1.f, 1.f,
+	0.f, .5f, 0.f, 0.f, .3f, .7f, .0f, .5f
 };
 
-static void errorCallback(const int code, const char* const desc) {
-	std::cerr << "[ERROR " << code << "] " << desc << ".\n";
+static void checkLinkStatus(const GLuint prog) {
+	GLint status;
+	glGetProgramiv(prog, GL_LINK_STATUS, &status);
+
+	if(status == GL_FALSE) {
+		GLint infoLogLength;
+		glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &infoLogLength);
+		auto infoLog = new GLchar[infoLogLength + 1];
+		glGetProgramInfoLog(prog, infoLogLength, nullptr, infoLog);
+		std::cerr << "Linker failure\n\n" << infoLog;
+		delete[] infoLog;
+		std::cin.get();
+	}
 }
 
-std::stringstream operator"" _f(const char* const s, const size_t _) {
-	return std::stringstream() << s;
+static fs::path resPath(const fs::path& p) {
+	static const auto RES_DIR = fs::path(RES);
+	return RES_DIR / p;
 }
 
-class readFile {
-	std::string content;
-	const char* data;
+static GLuint shader(const fs::path& p) {
+	const auto ext = p.extension().string();
+	const auto fullPath = resPath("shaders" / p);
+	GLenum type;
 
-public:
-	operator const char** () {
-		return &this->data;
-	}
+	if(ext == ".frag")
+		type = GL_FRAGMENT_SHADER;
+	else if(ext == ".vert")
+		type = GL_VERTEX_SHADER;
+	else
+		throw std::runtime_error("Invalid shader extension " + ext);
 
-	readFile(const fs::path& p) {
-		std::ifstream s(p);
+	std::ifstream s(fullPath);
+	const auto content = std::string(
+		std::istreambuf_iterator(s),
+		std::istreambuf_iterator<char>()
+	);
+	const auto data = content.c_str();
 
-		if(!s)
-			throw AppError("Could not open file "_f << p.string() << '.');
-
-		this->content = std::string(std::istreambuf_iterator(s), std::istreambuf_iterator<char>());
-		this->data = this->content.c_str();
-	}
-};
+	const auto ID = glCreateShader(type);
+	glShaderSource(ID, 1, &data, nullptr);
+	glCompileShader(ID);
+	return ID;
+}
 
 int main() {
-	try {
-		glfwSetErrorCallback(errorCallback);
+	(void)glfwInit();
 
-		if(glfwInit() == GLFW_FALSE)
-			throw AppError("Could not init GLFW.");
+	auto window = glfwCreateWindow(800, 600, "Texture demo", nullptr, nullptr);
+	glfwMakeContextCurrent(window);
 
-		const auto window = glfwCreateWindow(WIDTH, HEIGHT, TITLE, nullptr, nullptr);
+	glewExperimental = GL_TRUE;
+	(void)glewInit();
 
-		if(!window)
-			throw AppError("Could not create window \""_f << TITLE << "\".");
+	const auto frag = shader("texture.frag");
+	const auto prog = glCreateProgram();
+	const auto vert = shader("texture.vert");
 
-		glfwMakeContextCurrent(window);
+	glAttachShader(prog, frag);
+	glAttachShader(prog, vert);
+	glLinkProgram(prog);
+	checkLinkStatus(prog);
+	glDetachShader(prog, frag);
+	glDetachShader(prog, vert);
+	glDeleteShader(frag);
+	glDeleteShader(vert);
 
-		glewExperimental = GL_TRUE;
-		const auto err = glewInit();
+	GLuint VAO, VBO;
+	glGenBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(triangle), triangle, GL_STATIC_DRAW);
 
-		if(err != GLEW_OK)
-			throw AppError("Could not init GLEW. "_f << glewGetErrorString(err) << '.');
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
 
-		glViewport(0, 0, WIDTH, HEIGHT);
+	GLuint texture = SOIL_load_OGL_texture(resPath(fs::path("textures") / "wood.png").string().c_str(), SOIL_LOAD_RGBA, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
 
-		GLuint VAO, VBO;
-		glGenVertexArrays(1, &VAO);
-		glGenBuffers(1, &VBO);
+	glUseProgram(prog);
+	GLint texUnit = glGetUniformLocation(prog, "texUnit");
+	glUniform1i(texUnit, 0);
 
-		glBindVertexArray(VAO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(triangleVertices), triangleVertices, GL_STATIC_DRAW);
+	glViewport(0, 0, 800, 600);
 
-		const auto stride = 6 * sizeof(GLfloat);
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (const void*)0);
-
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (const void*)(3 * sizeof(GLfloat)));
-
-		glBindVertexArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-		const auto shadersDir = fs::path(RES) / "shaders";
-
-		const auto frag = glCreateShader(GL_FRAGMENT_SHADER);
-		glShaderSource(frag, 1, readFile(shadersDir / "constantGradient.frag"), nullptr);
-		glCompileShader(frag);
-
-		const auto vert = glCreateShader(GL_VERTEX_SHADER);
-		glShaderSource(vert, 1, readFile(shadersDir / "constantGradient.vert"), nullptr);
-		glCompileShader(vert);
-
-		const auto prog = glCreateProgram();
-		glAttachShader(prog, frag);
-		glAttachShader(prog, vert);
-		glLinkProgram(prog);
-
-		GLint status;
-		glGetProgramiv(prog, GL_LINK_STATUS, &status);
-
-		if(status == GL_FALSE) {
-			GLint infoLogLength;
-			glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &infoLogLength);
-			auto infoLog = new GLchar[infoLogLength + 1];
-			glGetProgramInfoLog(prog, infoLogLength, nullptr, infoLog);
-			const auto s = "Linker failure\n\n"_f << infoLog;
-			delete[] infoLog;
-			throw AppError(s);
-		}
-
-		glDetachShader(prog, frag);
-		glDetachShader(prog, vert);
-		glDeleteShader(frag);
-		glDeleteShader(vert);
-
-		while(glfwWindowShouldClose(window) == GLFW_FALSE) {
-			glClear(GL_COLOR_BUFFER_BIT);
-			glClearColor(BACK_COLOR.x, BACK_COLOR.y, BACK_COLOR.z, 1.f);
-
-			glUseProgram(prog);
-			glBindVertexArray(VAO);
-			glDrawArrays(GL_TRIANGLES, 0, 3);
-
-			glfwPollEvents();
-			glfwSwapBuffers(window);
-		}
-
-		glfwTerminate();
-
-	} catch(const AppError& e) {
-		glfwTerminate();
-
-		std::cerr << "[AppError] " << e.what() << '\n';
-		std::cout << "Press ENTER to exit.\n";
-		std::cin.get();
-		return EXIT_FAILURE;
+	while(!glfwWindowShouldClose(window)) {
+		glClear(GL_COLOR_BUFFER_BIT);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glfwSwapBuffers(window);
+		glfwPollEvents();
 	}
 	return EXIT_SUCCESS;
 }
