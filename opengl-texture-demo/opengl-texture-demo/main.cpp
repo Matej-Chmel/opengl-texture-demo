@@ -10,9 +10,9 @@ namespace fs = std::filesystem;
 const auto RES_PATH = fs::path(RES);
 
 constexpr GLfloat TRIANGLE[]{
-	-.8f, -.5f, 0.f, .5f, .5f,
-	.8f, -.5f, 0.f, 1.f, 1.f,
-	0.f, .5f, 0.f, .0f, .5f
+	-.8f, -.5f, 0.f, .1f, 0.f,
+	.8f, -.5f, 0.f, .9f, 0.f,
+	0.f, .5f, 0.f, .5f, .5f
 };
 
 constexpr auto WIDTH = 800;
