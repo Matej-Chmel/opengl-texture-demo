@@ -1,5 +1,5 @@
 # Texture demo
-An example program that shows how to render a 2D texture with OpenGL.
+An example program that shows how to render a 2D texture with OpenGL and SOIL library.
 
 ## Supported platform
 - Windows 10 with Visual Studio 2022.
